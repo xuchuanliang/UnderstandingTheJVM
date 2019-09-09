@@ -1,5 +1,8 @@
 package capter01;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author xuchuanliangbt
  * @title: Main
@@ -10,11 +13,18 @@ package capter01;
  */
 public class Main {
 
-    public static void main(String[] args){
-        test1();
+    public static void main(String[] args) {
+//        test1();
+//        testOutMemory();
+        try{
+            testStackOut();
+        }catch (Throwable e){
+            System.out.println("最大深度"+i);
+//            e.printStackTrace();
+        }
     }
 
-    public static void test1(){
+    public static void test1() {
         /**
          * ==比较引用类型比较的是地址值是否相同
          * equals比较引用类型，默认也是比较地址值是否相同，而String类重写了equals方法，比较的是内容是否相同
@@ -49,11 +59,11 @@ public class Main {
         String a = new String("abc");
         String b = new String("abc");
         //true，都是字符串常量池中abc字符串的地址
-        System.out.println(a.intern()==b.intern());
+        System.out.println(a.intern() == b.intern());
         //false 字符串常量池中abc字符串地址！=堆内存创建b时开辟的空间地址
-        System.out.println(a.intern()==b);
+        System.out.println(a.intern() == b);
         //false
-        System.out.println(a==b.intern());
+        System.out.println(a == b.intern());
         /*
          * intern方法会到常量池中查找是否存在该对象，如果存在，返回该对象。不存在的话就创建该对象并返回该对象(jdk1.6),(jdk1.7)
          * 会在常量池中存一个指向堆中的那个对象的引用。 不存在往往是String s3 = new String("1") + new
@@ -81,4 +91,28 @@ public class Main {
          * 常量池中已存在ab，所以会直接将strtwo指向常量池中的"ab",即堆中str对象的引用，因此相等
          */
     }
+
+    static class OOMObject{
+        byte[] bytes = new byte[1024];
+    }
+
+    public static void testOutMemory(){
+        List<OOMObject> list = new ArrayList<OOMObject>();
+        while (true){
+            list.add(new OOMObject());
+        }
+    }
+
+
+    Boolean isItTrue(){
+        return Boolean.TRUE;
+    }
+
+    static int i = 1;
+    private static void testStackOut(){
+        i++;
+        testStackOut();
+    }
+
+
 }
