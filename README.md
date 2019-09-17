@@ -346,13 +346,85 @@ public class Allocation {
 足够的连续空间来存放大对象。
 - 虚拟机提供-XX:PretenureSizeThreshold参数，大于这个设置值的对象直接在老年代分配，避免Eden区以及两个Survivor区之间发生大量内存复制
 （新生代采用复制算法收集内存）
+- 虚拟机采用分代收集的思想管理内存，默认对象在Eden区域第一次出生并经过第一给Minor GC后仍然存活，并且能被Survivor容纳的话，会被移动到
+Survivor空间，并且对象年龄设为1，之后每经过一次Minor GC则年龄增加1，一般15岁后会晋升到老年代，通过-XX:MaxTenuringThreshold设置
+```java
+package capter03;
+
+/**
+ * 通过设置对象晋升到老年代的年龄
+ */
+public class TestMaxTenuringThreshold {
+    private static final int _1MB = 1024*1024;
+
+    public static void main(String[] args){
+        testTenuringThreshold();
+    }
+
+    /**
+     * VM args:-verbose:gc -Xms20M -Xmx20M -Xmn10M -XX:+PrintGCDetails -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=1
+     *
+     * VM args解释：-verbose:gc表示输出java虚拟机中GC的详细情况
+     * -Xms20M:表示限制虚拟机堆内存最小是20M
+     * -Xmx20M:表示限制虚拟机堆内存最大是20M
+     * -Xmn10M:表示限制虚拟机的新生代区域为10M（包括一个Eden区域和两个Survivor区域）
+     * -XX:PrintGCDetails:表示打印出GC详细信息
+     * -XX:SurvivorRatio=8表示Eden区域与一个Survivor区域比例是8:1
+     * -XX:MaxTenuringThreshold=1表示限制对象晋升到老年代的年龄是1岁
+     *
+     * 此时堆内存一共20M，新生代区域10M，其中Eden区域8M，两个Survivor区域分别是1M，老年代10M
+     *
+     * GC日志解析：VM args: -verbose:gc -Xms20M -Xmx20M -Xmn10M -XX:+PrintGCDetails -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=1
+         [GC (Allocation Failure) --[PSYoungGen: 6783K->6783K(9216K)] 14975K->14983K(19456K), 0.0027136 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+         [Full GC (Ergonomics) [PSYoungGen: 6783K->0K(9216K)] [ParOldGen: 8200K->8905K(10240K)] 14983K->8905K(19456K), [Metaspace: 3320K->3320K(1056768K)], 0.0041530 secs] [Times: user=0.00 sys=0.00, real=0.00 secs]
+         Heap
+         PSYoungGen      total 9216K, used 4342K [0x00000000ff600000, 0x0000000100000000, 0x0000000100000000)
+         eden space 8192K, 53% used [0x00000000ff600000,0x00000000ffa3d8a0,0x00000000ffe00000)
+         from space 1024K, 0% used [0x00000000fff00000,0x00000000fff00000,0x0000000100000000)
+         to   space 1024K, 0% used [0x00000000ffe00000,0x00000000ffe00000,0x00000000fff00000)
+         ParOldGen       total 10240K, used 8905K [0x00000000fec00000, 0x00000000ff600000, 0x00000000ff600000)
+         object space 10240K, 86% used [0x00000000fec00000,0x00000000ff4b2478,0x00000000ff600000)
+         Metaspace       used 3327K, capacity 4556K, committed 4864K, reserved 1056768K
+         class space    used 361K, capacity 392K, committed 512K, reserved 1048576K
+     1.进行了一次Minor GC，进行GC后新生代GC前后占用分别是6783K->6783K，堆内存GC前后占用分别是14975K->14983K
+     2.进行了第二次GC，此时由于Eden区域剩余的内存不足够分配4M的allocation3，所以进行了一次Full GC,也就是Stop the World，
+     由于Eden中的对象年龄已经1岁，所以直接移到了老年代，并且成功在新生代分配了allocation3
 
 
--- 2019年9月6日 16:21:40 43/460
--- 2019年9月9日 08:30:35 50/460
--- 2019年9月9日 12:17:02 53/460
--- 2019年9月9日 18:13:51 56/460
--- 2019年9月10日 20:00:32 61/460
--- 2019年9月11日 11:16:48 65/460
--- 2019年9月16日 12:19:27 69/460
--- 2019年9月16日 19:44:25 94/460
+     */
+    public static void testTenuringThreshold(){
+        byte[] allocation1,allocation2,allocation3;
+        allocation1 = new byte[_1MB*4];
+        allocation2 = new byte[_1MB*4];
+        allocation3 = new byte[_1MB*4];
+        allocation3 = null;
+        allocation3 = new byte[_1MB*4];
+
+    }
+}
+
+```
+
+### 动态对象年龄判定
+- 虚拟机并不是永远的要求对象的年龄必须达到了MaxTenuringThreshold才能晋升老年代，如果在Survivor空间中相同年龄所有对象大小的总和大于
+Survivor空间的一半，年龄大于或等于该年龄的对象就可以直接进入老年代，无需等到MaxTenuringThreshold中要求的年龄
+
+### 空间分配担保
+> 在发生Minor GC之前，虚拟机会先检查老年代最大可用的连续空间是否大于新生代所有对象的总空间，如果这个条件成立，那么Minor GC可以确保是安全的。
+>如果不成立，则会查看HandlePromotionFailure设置值是否允许担保失败。如果允许，那么会继续检查老年代最大可用的连续空间是否大于历次晋升
+>到老年代对象的平均大小，如果大于，将尝试一次Minor GC，如果小于或者HandlerPromotionFailure设置不允许毛线，那这是改为进行一次Full GC
+>新生代使用复制收集算法，但是为了内存利用率，只使用一个Survivor空间作为轮换备份，因此当出现大量对象在Minor GC后仍然存活的情况，就需要
+>老年代进行分配担保，把Survivor无法容纳的对象直接进入老年代，老年代要进行担保前提是老年代有容纳这些对象的声音空间，一共有多少对象会活下来
+>在实际完成内存回收之前是无法确定的，只好取之前每一次回收晋升到老年代对象容量的平均大小值作为经验值，与老年代的剩余空间进行比较，决定是否
+>进行Full GC来让老年代腾出更多空间。
+
+
+- 2019年9月6日 16:21:40 43/460
+- 2019年9月9日 08:30:35 50/460
+- 2019年9月9日 12:17:02 53/460
+- 2019年9月9日 18:13:51 56/460
+- 2019年9月10日 20:00:32 61/460
+- 2019年9月11日 11:16:48 65/460
+- 2019年9月16日 12:19:27 69/460
+- 2019年9月16日 19:44:25 94/460
+- 2019年9月17日 16:51:26 101/460
