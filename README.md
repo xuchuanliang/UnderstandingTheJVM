@@ -417,6 +417,56 @@ Survivor空间的一半，年龄大于或等于该年龄的对象就可以直接
 >老年代进行分配担保，把Survivor无法容纳的对象直接进入老年代，老年代要进行担保前提是老年代有容纳这些对象的声音空间，一共有多少对象会活下来
 >在实际完成内存回收之前是无法确定的，只好取之前每一次回收晋升到老年代对象容量的平均大小值作为经验值，与老年代的剩余空间进行比较，决定是否
 >进行Full GC来让老年代腾出更多空间。
+>
+# 第四章 虚拟机性能监控与故障处理工具
+- 在jdk/bin下，有很多工具
+>jps：JVM Process Status Tool,显示指定系统内所有的HotSpot虚拟机进程
+>jstat：JVM Statistics Monitoring Tool，用于收集HotSpot虚拟机各方面的运行数据
+>jinfo：Configuration Info For Java，显示虚拟机配置信息
+>jmap：Memory Map For Java，生成虚拟机的内存存储快照（heapdump文件）
+>jhat：JVM Heap Dump Browner，用于分析heapdump文件，他会建立一个Http/Html服务器，让用户可以在浏览器上查看分析结果
+>jstack：Stack Trace for Java，显示虚拟机的线程快照
+
+### jps：JVM Process Status Tool，虚拟机进程状况工具
+- jps [ options ][ hostid ]
+>jps可以列出正在运行的虚拟机进程，并显示虚拟机执行主类名称以及这些进程的本地虚拟机唯一ID（Local Virtual Machine Identifier,LVMID）,
+>jdk的其他工具大多需要输入它查询到的LVMID来确定要监控的是哪一个虚拟机进程，与本地操作系统的进程ID一致
+>jps -q：只输出LVMID，省略主类名称
+>jps -m：输出虚拟机进程启动时传递给主类main()函数的参数
+>jps -l：输出主类的全名，如果进程执行的是jar包，输出jar路径
+>jps -v：输出虚拟机进程启动时JVM参数
+
+###jstat：JVM Statistics Monitoring Tool，虚拟机统计信息监视工具
+- jstat [ option vmid [interval][s|ms] [count] ]，interval和count表示查询间隔和次数，如果省略说明只查一次。
+- jstat是用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的类加载、内存、垃圾收集、JIT编译等运行数据。
+> jstat -class 监视类装载、卸载数量、总空间以及类装载所耗费的时间
+> jstat -gc 监视java堆状况，包括Eden区、两个Survivor区、老年代、永久代等容量、已用空间、GC时间合计等信息
+> jstat -gccapacity 监视内容与-gc基本相同，但输出主要关注java堆各个区域使用到的最大、最小空间
+> jstat -gcutil 监视内容与-gc基本相同，但输出主要关注已使用空间占总空间的百分比
+> jstat -gccause 与-gcutil功能一样，但是会额外输出导致上一次GC产生的原因
+> jstat -gcnew 监视新生代GC状况
+> jstat -gcnewcapacity 监视内容与-gcnew基本相同，输出主要关注使用到的最大、最小空间
+> jstat -gcold 监视老年代GC状况
+> jstat -gcoldcapacity 监视内容与-gcold基本相同，输出主要关注使用到的最大、最小空间
+> jstat -gcpermcapacity 输出永久代使用的最大、最小空间
+> jstat -compiler 输出JFT编译器编译过的方法、耗时等信息
+> jstat -printcompilation 输出已经被JFT编译的方法
+
+### jinfo：Configuration Info For Java java配置信息工具
+- jinfo的作用是实时的查看和调整虚拟机各项参数
+
+### jmap：Memeory Map For Java java内存映射工具
+- jmap [ option ] vmid
+- jmap命令用于生成堆转储快照（一般称为heapdump或dump文件），还可以查询finalize执行队列，java堆和永久代的详细信息，如空间使用率、当前用
+的是哪种收集器等。
+> jmap -dump 生成java堆转储快照
+> jmap -finalizerinfo 显示在F-Queue中等待Finalizer线程执行finalize方法的对象。只在linux/Solairs中有效
+> jmap -heap 显示java堆详细信息，如使用哪种回收期、参数配置、分代状况等
+> jmap -histo 显示堆中对象统计信息，包括类、实例数量、合计容量
+> jmap -permstat 以ClassLoader为统计口径显示永久代内存状态
+> jmap -F 当虚拟机进程对-dump选项没有响应时，可使用这个选项强制生成dump快照
+
+
 
 
 - 2019年9月6日 16:21:40 43/460
@@ -428,3 +478,4 @@ Survivor空间的一半，年龄大于或等于该年龄的对象就可以直接
 - 2019年9月16日 12:19:27 69/460
 - 2019年9月16日 19:44:25 94/460
 - 2019年9月17日 16:51:26 101/460
+- 2019年9月17日 19:43:56 108/460
