@@ -1,5 +1,7 @@
 package capter03;
 
+import java.util.Map;
+
 /**
  * 通过设置对象晋升到老年代的年龄
  */
@@ -8,6 +10,7 @@ public class TestMaxTenuringThreshold {
 
     public static void main(String[] args){
         testTenuringThreshold();
+        getAllStackTrace();
     }
 
     /**
@@ -48,6 +51,17 @@ public class TestMaxTenuringThreshold {
         allocation3 = new byte[_1MB*4];
         allocation3 = null;
         allocation3 = new byte[_1MB*4];
+    }
 
+    public static void getAllStackTrace(){
+        Map<Thread, StackTraceElement[]> allStackTraces = Thread.getAllStackTraces();
+        allStackTraces.entrySet().forEach(e->{
+            Thread key = e.getKey();
+            StackTraceElement[] value = e.getValue();
+            System.out.println("=======================key:"+key.getName());
+            for(StackTraceElement element:value){
+                System.out.println(element);
+            }
+        });
     }
 }
