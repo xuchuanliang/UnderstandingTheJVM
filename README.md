@@ -749,8 +749,114 @@ class ConstClass{
 >是否能找到对应的类；2.在指定类中是否存在符合方法的字段描述符以及简单名称所描述的方法和字段；3.符号引用的类、字段、方法的访问性是否可被
 >当前类访问。如果符号引用验证未通过，将抛出java.lang.IncompatibleClassChangeError异常的子类，如java.lang.IllegalAccessError,
 >java.lang.NoSuchFieldError,java.lang.NoSuchMethodError。
+- 准备
+>准备阶段是正式为类分配内存并设置类变量初始值的阶段，这个时候进行内存分配的仅包含类变量（被static修饰的变量），而不包括实例变量，实例变量
+>将会在对象实例化时随着对象一起分配在java堆中，初始值一般指0值。如果类字段的字段属性表中存在ConstantValue属性，那么在准备阶段变量
+>value就会被初始化为ConstantValue属性所指定的值，如public static final int value = 123;
+- 解析
+- 虚拟机将常量池内的符号引用替换为直接引用的过程。
+>符号引用：符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要使用时能无歧义的定位到目标即可；
+>直接引用：直接引用可以是直接指向目标的指针、相对偏移量或是一个能间接定位到目标的句柄。
+>虚拟机规范中只要求在执行anewarray、checkcast、getfield、getstatic、instanceof、invokedynamic、invokeinterface、invokespecial、
+>invokestatic、invokevirtual、ldc、ldc_w、multianewarray、new、putfield和putstatic这16个用于操作符号引用的字节码之前，先对他们
+>所使用的符号进行解析。
+- 初始化
 
+## 7.4 类加载器
+- 虚拟机设计团队把类加载阶段中的通过一个类的全限定名来获取描述此类的二进制字节流这个动作放到java虚拟机外部去实现，以便让应用程序自己决定如何去
+获取所需要的类，实现这个动作的代码模块称为类加载器。
+> 每一个类加载器，都拥有一个独立的类名称空间，对于任意一个类，都需要由加载它的类加载器和这个类本身一同确立其在java虚拟机中的唯一性。比较
+>两个类是否相等，只有在这两个类是由同一个类加载器加载的前提下才有意义，否则，即使这两个类来源于同一个class文件，被同一个虚拟机加载，
+>只要加载他们的类加载器不同，那这两个类就必定不相等，包括equals()，isAssignableFrom()，isInstance()方法的返回结果，也包括instanceof关键字
+>做对象所属关系判定等情况。
+```java
+package capter07;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * 类加载器与instanceof关键字演示
+ * 同一个class，使用不同的类加载器加载，不想等
+ */
+public class ClassLoaderTest {
+    public static void main(String[] args) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                String fileName = name.substring(name.lastIndexOf(".")+1)+".class";
+                InputStream inputStream = getClass().getResourceAsStream(fileName);
+                if(inputStream==null){
+                    return super.loadClass(name);
+                }
+                byte[] b = new byte[1];
+                try {
+                    b = new byte[inputStream.available()];
+                    inputStream.read(b);
+                    return defineClass(name,b,0,b.length);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        };
+        Object obj = classLoader.loadClass("capter07.ClassLoaderTest").newInstance();
+        System.out.println(obj.getClass());
+        System.out.println(obj instanceof ClassLoaderTest);
+    }
+}
+
+```
+- 双亲委派模型
+>三种系统提供的类加载器：
+>1.启动类加载器（Bootstarp ClassLoader）：这个加载器是使用C++语言实现，是虚拟机的一部分，这个类加载器负责将存放在<JAVA_HOME>\lib目录中
+>的，或者被-Xbootclasspath参数锁指定的路径中的，并且是虚拟机识别的类库加载到虚拟机内存中。启动类加载器无法被java程序直接禁用，用户在编写
+>自定义类加载器时，如果需要把加载请求委派给引导类加载器，那么直接使用null代替即可。
+>2.扩展类加载器（Extension Classloader）：这个类加载器由sun.misc.Launcher$ExtClassLoader实现，它负责加载<JAVA_HOME>\lib\ext目录中的，
+>或者被java.ext.dirs系统变量所指定的路径中的所有类库，开发者可以直接使用扩展类加载器
+>3.应用程序类加载器（Application Classloader）：这个类加载器由sun.misc.Launcher$AppClassLoader实现。由于这个类加载器是ClassLoader中的
+>getSystemClassLoader()方法的返回值。负责加载用户类路径（ClassPath）上所指定的类库，一般不指定类加载器都是由这个类加载器加载用户程序
+- 双亲委派模型要求除了顶层的启动类加载器外，其他累加器都应该有自己的父类加载器，一般使用组合关系来复用父类加载器的代码。
+>双亲委派模型的过程是：如果一个类加载器收到了类加载的请求，它首先不会自己尝试去加载这个类，而是把这个请求委派给父类加载器去完成，每一个层次的
+>类加载器都是如此，因此所有的类加载请求都应该传送到顶层的启动类加载器中，只有当父类加载器反馈自己无法完成这个加载请求时，子加载器才会尝试自己去加载。
+```java
+package capter07;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+public class ClassLoaderTest {
+    /**
+     * 模仿双亲委派模型实现自己的类加载器
+     */
+    public static void myDIYClassLoader(){
+        ClassLoader classLoader = new ClassLoader() {
+            @Override
+            public Class<?> loadClass(String name,boolean resolve) throws ClassNotFoundException {
+                //首先，检查请求的类是否已经被加载过
+                Class c = findLoadedClass(name);
+                if(c==null){
+                    try {
+                        c = super.loadClass(name);
+                    }catch (ClassNotFoundException e){
+                        //如果父类加载器抛出ClassNotFoundException
+                        //说明父类加载器无法完成加载请求
+                    }
+                    if(c==null){
+                        //在父类加载器无法加载的时候，再调用本身的findClass方法来进行类加载
+                        c = findClass(name);
+                    }
+                }
+                if(resolve){
+                    resolveClass(c);
+                }
+                return c;
+            }
+        };
+    }
+}
+
+```
 
 
 
@@ -780,3 +886,4 @@ class ConstClass{
 - 2019年9月19日 19:51:14 154/460
 - 2019年9月20日 21:25:50 173/460
 - 2019年9月26日 16:23:11 219/460
+- 2019年9月26日 19:29:26 233/460
