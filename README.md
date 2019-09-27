@@ -808,6 +808,7 @@ public class ClassLoaderTest {
 
 ```
 - 双亲委派模型
+- 双亲委派很好的解决了各个类加载器的基础类统一问题（越基础的类由越上层的的加载器进行加载）
 >三种系统提供的类加载器：
 >1.启动类加载器（Bootstarp ClassLoader）：这个加载器是使用C++语言实现，是虚拟机的一部分，这个类加载器负责将存放在<JAVA_HOME>\lib目录中
 >的，或者被-Xbootclasspath参数锁指定的路径中的，并且是虚拟机识别的类库加载到虚拟机内存中。启动类加载器无法被java程序直接禁用，用户在编写
@@ -857,8 +858,35 @@ public class ClassLoaderTest {
 }
 
 ```
+- 破坏双亲委派模型
+- 虚拟机在进行类加载的时候会调用加载器的私有方法loadClassInternal(String name)，这个方法的唯一逻辑就是去调用自己的loadClass()方法（阅读源码）。
+- jdk1.2之后应当吧自己的类加载逻辑写在findClass()方法中，在loadClass()方法中的逻辑如果父类加载失败、则会调用自己的findClass()方法来完成加载，
+这样就可以保证新写出的类加载器是符号双亲委派规则的。具体可看ClassLoader类的findClass()方法上的注释。
+```text
+   /**
+     * Finds the class with the specified <a href="#name">binary name</a>.
+     * This method should be overridden by class loader implementations that
+     * follow the delegation model for loading classes, and will be invoked by
+     * the {@link #loadClass <tt>loadClass</tt>} method after checking the
+     * parent class loader for the requested class.  The default implementation
+     * throws a <tt>ClassNotFoundException</tt>.
+     *
+     * @param  name
+     *         The <a href="#name">binary name</a> of the class
+     *
+     * @return  The resulting <tt>Class</tt> object
+     *
+     * @throws  ClassNotFoundException
+     *          If the class could not be found
+     *
+     * @since  1.2
+     */
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        throw new ClassNotFoundException(name);
+    }
+```
 
-
+# 第八章 虚拟机字节码执行引擎
 
 
 
