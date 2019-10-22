@@ -16,16 +16,29 @@ public class JavaVMStackSOF {
 
     public static void main(String[] args){
         JavaVMStackSOF javaVMStackSOF = new JavaVMStackSOF();
-        try{
-            javaVMStackSOF.stackLeak();
-        }catch (Throwable t){
-            System.out.println("栈的深度是："+javaVMStackSOF.i);
-            t.printStackTrace();
-        }
+//        try{
+//            javaVMStackSOF.stackLeak();
+//        }catch (Throwable t){
+//            System.out.println("栈的深度是："+javaVMStackSOF.i);
+//            t.printStackTrace();
+//        }
+        javaVMStackSOF.stackLeakByThread();
     }
 
     public void stackLeak(){
         i++;
         stackLeak();
+    }
+
+    public void stackLeakByThread(){
+        while (true){
+            Thread thread = new Thread(()->{
+                dontSto();
+            });
+        }
+    }
+
+    private void dontSto(){
+        while (true){}
     }
 }

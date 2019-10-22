@@ -17,6 +17,9 @@ public class DirectMemoryOOM {
     public static void main(String[] args) throws IllegalAccessException {
         Field field = Unsafe.class.getDeclaredFields()[0];
         field.setAccessible(true);
-        field.get(null);
+          Unsafe unsafe = (Unsafe) field.get(null);
+        while (true){
+            unsafe.allocateMemory(_1MB);
+        }
     }
 }

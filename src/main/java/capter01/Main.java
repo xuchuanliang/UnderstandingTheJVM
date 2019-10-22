@@ -20,7 +20,7 @@ public class Main {
             testStackOut();
         }catch (Throwable e){
             System.out.println("最大深度"+i);
-//            e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
