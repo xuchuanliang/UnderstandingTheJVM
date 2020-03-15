@@ -29,7 +29,7 @@ java平台和本地C代码进行相互操作的API）
 
 > 方法区：是各个线程共享的内存区域，用来存放被虚拟机加载的Class信息如类名、访问修饰符、常量、静态变量、即时编译器编译后的代码等数据。被称为永久代。
 ```java
-package capter01;
+package book.capter01;
 
 /**
  * @author xuchuanliangbt
@@ -165,7 +165,7 @@ native函数库直接分配堆外内存，然后通过一个存储在java堆中�
 >finalize方法中将自己赋值为某个类变量或者对象的成员变量，那么第二次标记时它会被移除出即将回收的集合，此时对象拯救了自己，如果对象这个时间
 >还没有逃脱，那么基本上确定会被回收
 ```java
-package capter02;
+package book.capter02;
 
 /**
  *1.对象可以在被GC的时候自救
@@ -288,7 +288,7 @@ Tracing 的过程，而重新标记阶段则是为了修正并发标记期间因
 - 新生代GC（Minor GC）:指发生在新生代的垃圾收集动作，因为java对象大多具备朝生夕死的特性，所以Minor GC非常频繁，一般回收速度也比较快。
 - 老年代GC（Major GC/Full GC）:指发生在老年代的GC，出现Major GC,经常会伴随至少一次Minor GC,Major GC的速度一般比Minor GC慢10倍以上。
 ```java
-package capter03;
+package book.capter03;
 
 /**
  * VM参数：-verbose:gc -Xms20M -Xmx20M -Xmn10M -XX:+PrintGCDetails -XX:SurvivorRatio=8
@@ -351,7 +351,7 @@ public class Allocation {
 - 虚拟机采用分代收集的思想管理内存，默认对象在Eden区域第一次出生并经过第一给Minor GC后仍然存活，并且能被Survivor容纳的话，会被移动到
 Survivor空间，并且对象年龄设为1，之后每经过一次Minor GC则年龄增加1，一般15岁后会晋升到老年代，通过-XX:MaxTenuringThreshold设置
 ```java
-package capter03;
+package book.capter03;
 
 /**
  * 通过设置对象晋升到老年代的年龄
@@ -651,7 +651,7 @@ Survivor空间的一半，年龄大于或等于该年龄的对象就可以直接
 >5.当使用jdk1.7的动态语言支持时，如果一个java.lang.invoke.MethodHandler实例最后的解析结果REF_getStatic、REF_putStatic、REF——invokeStatic
 >的方法句柄，并且这个方法句柄所对应的类没有进行过初始化，则需要先触发其初始化
 ```java
-package capter07;
+package book.capter07;
 
 /**
  *
@@ -770,7 +770,7 @@ class ConstClass{
 >只要加载他们的类加载器不同，那这两个类就必定不相等，包括equals()，isAssignableFrom()，isInstance()方法的返回结果，也包括instanceof关键字
 >做对象所属关系判定等情况。
 ```java
-package capter07;
+package book.capter07;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -800,7 +800,7 @@ public class ClassLoaderTest {
                 return null;
             }
         };
-        Object obj = classLoader.loadClass("capter07.ClassLoaderTest").newInstance();
+        Object obj = classLoader.loadClass("book.capter07.ClassLoaderTest").newInstance();
         System.out.println(obj.getClass());
         System.out.println(obj instanceof ClassLoaderTest);
     }
@@ -821,7 +821,7 @@ public class ClassLoaderTest {
 >双亲委派模型的过程是：如果一个类加载器收到了类加载的请求，它首先不会自己尝试去加载这个类，而是把这个请求委派给父类加载器去完成，每一个层次的
 >类加载器都是如此，因此所有的类加载请求都应该传送到顶层的启动类加载器中，只有当父类加载器反馈自己无法完成这个加载请求时，子加载器才会尝试自己去加载。
 ```java
-package capter07;
+package book.capter07;
 
 import java.io.IOException;
 import java.io.InputStream;
