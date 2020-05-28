@@ -14,11 +14,15 @@ public class FillHeap {
      * @throws InterruptedException
      */
     public static void main(String[] args) throws InterruptedException {
+       test();
+        System.gc();
+    }
+
+    private static void test() throws InterruptedException {
         List<OOMObject> list = new ArrayList<>();
         for(int i=0;i<1000;i++){
             Thread.sleep(50);
             list.add(new OOMObject());
         }
-        System.gc();
     }
 }
